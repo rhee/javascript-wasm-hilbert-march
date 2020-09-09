@@ -1,0 +1,34 @@
+<link rel="stylesheet" href="style.css">
+<div style="display:inline-block;width:45%">
+    Implementation Type:
+    <br />
+    <input type="radio" id="js" value="js" name="implementation_type" checked oninput="refresh()" >
+    <label for="js">js</label>
+    <br />
+    <input type="radio" id="wasm" value="wasm" name="implementation_type" oninput="refresh()" >
+    <label for="wasm">wasm</label>
+    <br />
+    <input type="radio" id="emscripten" value="emscripten" name="implementation_type" oninput="refresh()" >
+    <label for="emscripten">emscripten</label>
+</div>
+<div style="display:inline-block;width:45%">
+    Rank:
+    <input type="range" min=0 max=6 id='rank' value='5' oninput="refresh()" />
+    <span id='rankVal'></span>
+    <br />
+    Ants:
+    <input type="range" min=1 max=80 id='ants500' value='10' oninput="refresh()" />
+    <span id='antsVal'></span>
+    <br />
+    Target FPS:
+    <input type="range" min=1 max=4 id='fps15' value='2' oninput="refresh()" />
+    <span id='fpsVal'></span>
+    <br />
+    Use ImageBuffer:
+    <input type="checkbox" id='use_image_buffer' oninput="refresh()" />
+</div>
+<div>
+    <canvas id="cnv" width="840" height="840"></canvas>
+    <script src='fractal-em.js'></script>
+    <script src="script.js"></script>
+</div>
