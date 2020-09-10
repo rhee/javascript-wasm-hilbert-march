@@ -1,5 +1,5 @@
 #
-build:	fractal-opt.wasm fractal-opt.wat fractal-em.js
+build:	fractal-opt.wasm fractal-opt.wat fractal-em.js fractal-em-es6.js
 
 fractal.wasm:	fractal.c interp.c fractal-test interp-test
 	bash wasm-build-kit.bash \
@@ -28,6 +28,14 @@ fractal-em.js: fractal.c interp.c
 		-s EXPORTED_FUNCTIONS='["_c_fractal", "_c_interp", "_malloc", "_free"]' \
 		-s EXPORTED_RUNTIME_METHODS='["ccall"]' \
 		-s MODULARIZE=1
+
+fractal-em-es6.js: fractal.c interp.c
+	bash wasm-build-kit.bash \
+		emcc fractal.c interp.c -O3 -flto -Wl,--lto-O3 -o fractal-em-es6.js \
+		-s EXPORTED_FUNCTIONS='["_c_fractal", "_c_interp", "_malloc", "_free"]' \
+		-s EXPORTED_RUNTIME_METHODS='["ccall"]' \
+		-s MODULARIZE=1 \
+		-s EXPORT_ES6=1
 
 .FORCE:
 .PHONY: .FORCE fractal-test interp-test
