@@ -64,8 +64,8 @@ document.refresh = () => {
         console.log('use_image_buffer:', use_image_buffer);
 
         const fps_interval = 1000 / fps;
-        const max_vel = 1.0 * 0.05 / fps; // 1 초에 0.05 이동 (20초 후 완주)
-        const min_vel = max_vel / 5; // 완주 하는데 100초
+        const max_vel = 1.0 * 0.002; // 1 초에 0.002 이동 (500초 후 완주)
+        const min_vel = max_vel / 5; // 완주 하는데 2500초
         const num_steps = Math.pow(4, rank + 1);
 
         console.log('num_steps:', num_steps);
@@ -94,7 +94,7 @@ document.refresh = () => {
             for (let i = 0; i < num_ants; i++) {
                 const start_pos = Math.random();
                 const vel = Math.random() * (max_vel - min_vel) + min_vel;
-                const r = (vel / (max_vel - min_vel) * 128) | 0 + 128;
+                const r = Math.floor((vel-min_vel) / (max_vel - min_vel) * 128) + 128;
                 const g = 0;
                 const b = 0;
                 ants.push([start_pos, vel, r, g, b])
@@ -121,12 +121,12 @@ document.refresh = () => {
         var num_frame_misses = 0; // EMWA
 
         function draw_fps(ctx, misses) {
-            const msg = 'mean frame miss/sec: ' + (misses | 0);
+            const msg = 'mean frame miss/sec: ' + Math.floor(misses);
             ctx.font = '24px monospace';
             const m = ctx.measureText(msg);
             const box_w = m.width, box_a = m.actualBoundingBoxAscent, box_d = m.actualBoundingBoxDescent;
             const box_h = box_a + box_d;
-            const cx = ((w - box_w) / 2) | 0, cy = ((h - box_h) / 2) | 0;
+            const cx = Math.floor((w - box_w) / 2), cy = Math.floor((h - box_h) / 2);
             ctx.fillStyle = '#eeeeee';
             ctx.fillRect(cx - 5, cy - 5, box_w + 10, box_h + 10)
             ctx.fillStyle = 'black';
@@ -140,8 +140,7 @@ document.refresh = () => {
             const r = ant[2], g = ant[3], b = ant[4];
             const pos = (start_pos + t * vel) % 1.0;
             const [x, y] = interp(pos, num_steps, arr_steps, coords);
-            const xx = x | 0, yy = y | 0;
-            return [xx, yy, r, g, b]
+            return [x, y, r, g, b]
         }
 
         if (use_image_buffer) {
@@ -151,9 +150,10 @@ document.refresh = () => {
                 data.set(bg_cache.data);
                 ants.forEach((ant) => {
                     const [x, y, r, g, b] = ant_location(t, ant);
+                    const xx = Math.floor(x), yy = Math.floor(y);
                     for (let px = -2; px < 3; px++) {
                         for (let py = -2; py < 3; py++) {
-                            const ix = (x + px + (y + py) * w) * 4;
+                            const ix = (xx + px + (yy + py) * w) * 4;
                             data[ix + 0] = r; /* R */
                             data[ix + 1] = g; /* G */
                             data[ix + 2] = b; /* B */

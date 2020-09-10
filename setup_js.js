@@ -50,7 +50,7 @@ function setup_and_run(max_steps,run) {
         }
         let idx, l = 0, r = last;
         while (r - l > 1) {
-            idx = l + ((r - l) / 2) | 0;
+            idx = l + Math.floor((r - l) / 2);
             if (t > steps[idx]) {
                 l = idx;
             } else {
