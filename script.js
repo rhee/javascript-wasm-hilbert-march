@@ -72,6 +72,11 @@ document.refresh = () => {
         console.log('min_vel:', min_vel);
         console.log('max_vel:', max_vel);
 
+        const frame_miss_check_interval = 1000;
+        var t_frame_miss_check = performance.now(),
+            frame_misses = 0,
+            frame_misses_update = frame_misses;
+
         /* build up step border values */
         for (let i = 0; i < num_steps; i++)
             arr_steps[i] = i / num_steps;
@@ -116,12 +121,14 @@ document.refresh = () => {
         // cache path image
         const bg_cache = ctx.getImageData(0, 0, w, h);
 
-        // keep frame misses
-        const frame_misses = [];
-        var num_frame_misses = 0; // EMWA
-
-        function draw_fps(ctx, misses) {
-            const msg = 'mean frame miss/sec: ' + Math.floor(misses);
+        function draw_fps(ctx) {
+            const t_now = performance.now();
+            if (t_now >= t_frame_miss_check + frame_miss_check_interval) {
+                frame_misses_update = Math.floor(frame_misses * 1000 / (t_now-t_frame_miss_check));
+                frame_misses = 0;
+                t_frame_miss_check = t_now;
+            }
+            const msg = 'frame misses/sec: ' + frame_misses_update;
             ctx.font = '24px monospace';
             const m = ctx.measureText(msg);
             const box_w = m.width, box_a = m.actualBoundingBoxAscent, box_d = m.actualBoundingBoxDescent;
@@ -162,7 +169,7 @@ document.refresh = () => {
                     }
                 })
                 ctx.putImageData(im, 0, 0);
-                draw_fps(ctx, num_frame_misses);
+                draw_fps(ctx);
             }
         } else {
             function step(t) {
@@ -172,7 +179,7 @@ document.refresh = () => {
                     ctx.fillStyle = `rgb(${r},${g},${b})`;
                     ctx.fillRect(x - 2, y - 2, 5, 5);
                 })
-                draw_fps(ctx, num_frame_misses);
+                draw_fps(ctx);
             }
         }
 
@@ -194,17 +201,8 @@ document.refresh = () => {
             // 한 프레임 이상 놓쳤음
             if (t_elapsed >= 2 * fps_interval) {
                 //console.error('frames skipped');
-                frame_misses.push(t_now);
+                frame_misses += Math.floor(t_elapsed / fps_interval) - 1;
             }
-
-            // trim array, keep only 30 * max_fps items
-            const max_misses = 30 * 60;
-            if (frame_misses.length > max_misses)
-                frame_misses.splice(0, frame_misses.length - max_misses);
-            // count frame misses in last 1000 ms
-            const misses = frame_misses.filter(t => t_now - t < 1000).length;
-            // emwa
-            num_frame_misses = num_frame_misses * 0.95 + misses * 0.05;
 
             // 렌더링 시작
             t_prev = performance.now();
