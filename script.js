@@ -1,5 +1,5 @@
 var animation_id;
-var coords, interp_buf, arr_steps;
+// var coords, interp_buf, arr_steps;
 
 document.refresh = () => {
 
@@ -20,197 +20,30 @@ document.refresh = () => {
     console.log('implementation_type:', implementation_type);
 
     if (implementation_type == 'emscripten') {
-
         function setup_and_run(run) {
-
-            // var script = document.createElement('script');
-            // script.src = 'fractal-em.js';
-            // script.type = 'text/javascript';
-            // script.defer = true;
-            // document.getElementsByTagName('head').item(0).appendChild(script);
-            // addEventListener("load", function () {});
-
-            Module().then((instance) => {
-
-                // directions: 'R', 'L', 'D', 'U'
-                const dir_map = {
-                    "R": 0,
-                    "L": 1,
-                    "D": 2,
-                    "U": 3,
-                };
-
-                const coords_byte_offset = instance._malloc(8 * 2 * max_steps);
-                const interp_buf_byte_offset = instance._malloc(8 * 2);
-                const arr_steps_byte_offset = instance._malloc(8 * max_steps);
-
-                coords = instance.HEAPF64.subarray(coords_byte_offset / 8,
-                    coords_byte_offset / 8 + 2 * max_steps);
-                interp_buf = instance.HEAPF64.subarray(interp_buf_byte_offset / 8,
-                    interp_buf_byte_offset / 8 + 2);
-                arr_steps = instance.HEAPF64.subarray(arr_steps_byte_offset / 8,
-                    arr_steps_byte_offset / 8 + max_steps);
-
-                // instance._free(coords_byte_offset);
-                // instance._free(interp_buf_byte_offset);
-                // instance._free(arr_steps_byte_offset);
-
-                function fractal(rank, size, dx = 0, dy = 0, dir = 'U') {
-                    instance.ccall(
-                        "c_fractal",
-                        null,
-                        ["number", "number", "number", "number", "number", "number"], // Float64Array must be "number"
-                        [coords_byte_offset, rank, size, dx, dy, dir_map[dir]]
-                    );
-                    return coords;
-                }
-
-                function interp(t, num, steps, coords) {
-                    instance.ccall(
-                        "c_interp",
-                        null,
-                        ["number", "number", "number", "number", "number"], // Float64Array must be "number"
-                        [interp_buf_byte_offset, t, num, arr_steps_byte_offset, coords_byte_offset]
-                    );
-                    return interp_buf;
-                }
-
-                run(fractal, interp);
-
+            import('./setup_emscripten.js').then((m) => {
+                m.setup_and_run(max_steps,run);
             })
         }
-
     }
 
     if (implementation_type == 'wasm') {
-
         function setup_and_run(run) {
-            WebAssembly.instantiateStreaming(fetch("fractal-opt.wasm"), {
-                // for this example, we don't import anything
-                imports: {},
-            }).then(obj => {
-
-                const { memory, __heap_base, c_fractal, c_interp } = obj.instance.exports;
-
-                memory.grow(8); // 2 ==> 10
-
-                // directions: 'R', 'L', 'D', 'U'
-                const dir_map = {
-                    "R": 0,
-                    "L": 1,
-                    "D": 2,
-                    "U": 3,
-                };
-
-                // malloc
-                var heap_offset = __heap_base;
-
-                const coords_offset = heap_offset;
-                coords = new Float64Array(memory.buffer, heap_offset, max_steps * 2);
-                heap_offset += coords.byteLength;
-
-                const interp_buf_offset = heap_offset;
-                interp_buf = new Float64Array(memory.buffer, heap_offset, 2);
-                heap_offset += interp_buf.byteLength;
-
-                const arr_steps_offset = heap_offset;
-                arr_steps = new Float64Array(memory.buffer, heap_offset, max_steps);
-                heap_offset += arr_steps.byteLength;
-
-                function fractal(rank, size, dx = 0, dy = 0, dir = 'U') {
-                    c_fractal(coords_offset, rank, size, dx, dy, dir_map[dir]);
-                    return coords;
-                }
-
-                function interp(t, num, _steps, _coords) {
-                    c_interp(interp_buf_offset, t, num, arr_steps_offset, coords_offset);
-                    return interp_buf;
-                }
-
-                run(fractal, interp);
-
-            });
+            import('./setup_wasm.js').then((m) => {
+                m.setup_and_run(max_steps,run);
+            })
         }
-
     }
 
     if (implementation_type == 'js') {
-
         function setup_and_run(run) {
-
-            const TPL = {
-                R: [[0, 1, 'U'], [1, 1, 'R'], [1, 0, 'R'], [0, 0, 'D']],
-                L: [[1, 0, 'D'], [0, 0, 'L'], [0, 1, 'L'], [1, 1, 'U']],
-                D: [[1, 0, 'L'], [1, 1, 'D'], [0, 1, 'D'], [0, 0, 'R']],
-                U: [[0, 1, 'R'], [0, 0, 'U'], [1, 0, 'U'], [1, 1, 'L']]
-            }
-
-            coords = new Float64Array(max_steps * 2);
-            interp_buf = new Float64Array(2);
-            arr_steps = new Float64Array(max_steps);
-
-            function fractal_0(coords, idx, rank, size, dx, dy, dir) {
-                if (rank === 0) {
-                    for (let i = 0; i < 4; i++) {
-                        const p = TPL[dir][i];
-                        coords[idx + 2 * i + 0] = dx + p[0] * size;
-                        coords[idx + 2 * i + 1] = dy + p[1] * size;
-                    }
-                } else {
-                    const space = size / (Math.pow(2, rank + 1) - 1);
-                    const new_size = (size - space) / 2;
-                    const d2 = new_size + space;
-                    const sub_steps = Math.pow(4, rank - 1 + 1);
-                    for (let i = 0, new_idx = idx; i < 4; i++ , new_idx += sub_steps * 2) {
-                        const p = TPL[dir][i];
-                        fractal_0(coords, new_idx, rank - 1, new_size, dx + p[0] * d2, dy + p[1] * d2, p[2]);
-                    }
-                }
-            }
-
-            function fractal(rank, size, dx = 0, dy = 0, dir = 'U') {
-                fractal_0(coords, 0, rank, size, dx, dy, dir);
-                return coords;
-            }
-
-            function interp(t, num, steps, coords) {
-                /* find index */
-                if (t < steps[0]) {
-                    interp_buf[0] = coords[0];
-                    interp_buf[1] = coords[1];
-                    return interp_buf
-                }
-                const last = num - 1
-                if (t > steps[last]) {
-                    interp_buf[0] = coords[last * 2 + 0];
-                    interp_buf[1] = coords[last * 2 + 1];
-                    return interp_buf
-                }
-                let idx, l = 0, r = last;
-                while (r - l > 1) {
-                    idx = l + ((r - l) / 2) | 0;
-                    if (t > steps[idx]) {
-                        l = idx;
-                    } else {
-                        r = idx;
-                    }
-                }
-                /* now `l` have the start index of step */
-                /* interpolate within step */
-                const ix = l, dt = t - steps[ix], ds = steps[ix + 1] - steps[ix];
-                const sx = coords[ix * 2 + 0], sy = coords[ix * 2 + 1], dx = coords[(ix + 1) * 2 + 0] - sx, dy = coords[(ix + 1) * 2 + 1] - sy;
-                interp_buf[0] = sx + dt * dx / ds;
-                interp_buf[1] = sy + dt * dy / ds;
-                return interp_buf
-            }
-
-            run(fractal, interp);
-
+            import('./setup_js.js').then((m) => {
+                m.setup_and_run(max_steps,run);
+            })
         }
-
     }
 
-    function main(fractal, interp) {
+    function main(fractal, interp, arr_steps, coords) {
 
         console.log(fractal);
         console.log(interp);
