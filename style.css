@@ -26,6 +26,10 @@ canvas {
     margin: 0;
 }
 
+#select_implementation_type ul li {
+    display: inline-block;
+}
+
 #select_rank_value {
     grid-column-start: 2;
     grid-column-end: 4;
