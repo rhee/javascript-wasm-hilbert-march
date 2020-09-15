@@ -1,33 +1,42 @@
 <link rel="stylesheet" href="style.css">
-<div style="display:inline-block;width:45%">
-    Implementation Type:
-    <br />
-    <input type="radio" id="js" value="js" name="implementation_type" oninput="refresh()" >
-    <label for="js">js</label>
-    <br />
-    <input type="radio" id="wasm" value="wasm" name="implementation_type" oninput="refresh()" >
-    <label for="wasm">wasm</label>
-    <br />
-    <input type="radio" id="emscripten" value="emscripten" name="implementation_type" oninput="refresh()" checked >
-    <label for="emscripten">emscripten</label>
+<div class="controls">
+    <div id="select_implementation_type">
+        <label for="implementation_type">Implementation Type:</label>
+        <ul>
+            <li>
+                <input type="radio" id="js" value="js" name="implementation_type" oninput="refresh()">
+                <label for="js">js</label>
+            </li>
+            <li>
+                <input type="radio" id="wasm" value="wasm" name="implementation_type" oninput="refresh()">
+                <label for="wasm">wasm</label>
+            </li>
+            <li>
+                <input type="radio" id="emscripten" value="emscripten" name="implementation_type" oninput="refresh()"
+                    checked>
+                <label for="emscripten">emscripten</label>
+            </li>
+        </ul>
+        <label for="use_image_buffer">Use ImageBuffer:</label>
+        <input type="checkbox" name="use_image_buffer" id="use_image_buffer" oninput="refresh()" />
+    </div>
+    <div class="slider" id="select_rank_value">
+        <label for="rank">Rank:</label>
+        <input type="range" min="0" max="6" name="rank" id="rank" value='5' oninput="refresh()" />
+        <span id="rankVal"></span>
+    </div>
+    <div class="slider" id="select_num_ants_value">
+        <label for="ants500">Ants:</label>
+        <input type="range" min="1" max="80" name="ants500" id="ants500" value='10' oninput="refresh()" />
+        <span id="antsVal"></span>
+    </div>
+    <div class="slider" id="select_fps_value">
+        <label for="fps15">Target FPS:</label>
+        <input type="range" min="1" max="4" name="fps15" id="fps15" value='2' oninput="refresh()" />
+        <span id="fpsVal"></span>
+    </div>
 </div>
-<div style="display:inline-block;width:45%">
-    Rank:
-    <input type="range" min=0 max=6 id='rank' value='5' oninput="refresh()" />
-    <span id='rankVal'></span>
-    <br />
-    Ants:
-    <input type="range" min=1 max=80 id='ants500' value='10' oninput="refresh()" />
-    <span id='antsVal'></span>
-    <br />
-    Target FPS:
-    <input type="range" min=1 max=4 id='fps15' value='2' oninput="refresh()" />
-    <span id='fpsVal'></span>
-    <br />
-    Use ImageBuffer:
-    <input type="checkbox" id='use_image_buffer' oninput="refresh()" />
-</div>
-<div>
+<div class="contents">
     <canvas id="cnv" width="840" height="840"></canvas>
-    <script src="script.js"></script>
 </div>
+<script src="script.js"></script>
